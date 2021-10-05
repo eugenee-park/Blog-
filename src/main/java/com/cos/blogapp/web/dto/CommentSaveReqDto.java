@@ -7,15 +7,11 @@ import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-// DTO = Data Transfer Object (데이터 전송 오브젝트)
-@Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class LoginReqDto {
-	@Size(min = 2, max = 20)
+@Data
+public class CommentSaveReqDto {
 	@NotBlank
-	private String username;
-	@Size(min = 4, max = 20)
-	@NotBlank
-	private String password;
+	@Size(min = 1, max = 255)
+	private String content;
 }

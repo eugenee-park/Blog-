@@ -14,23 +14,19 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
 
 import com.cos.blogapp.domain.user.User;
-import com.cos.blogapp.domain.user.UserRepository;
 import com.cos.blogapp.handler.ex.MyAsyncNotFoundException;
-import com.cos.blogapp.util.MyAlgorithm;
-import com.cos.blogapp.util.SHA;
+import com.cos.blogapp.service.UserService;
 import com.cos.blogapp.util.Script;
 import com.cos.blogapp.web.dto.CMRespDto;
 import com.cos.blogapp.web.dto.JoinReqDto;
 import com.cos.blogapp.web.dto.LoginReqDto;
 import com.cos.blogapp.web.dto.UserUpdateDto;
-
 import lombok.RequiredArgsConstructor;
-
 @RequiredArgsConstructor
 @Controller
 public class UserController {
 
-	private final UserRepository userRepository;
+	private final UserService userService;
 	private final HttpSession session;
 
 	@PutMapping("/user/{id}")
@@ -44,23 +40,18 @@ public class UserController {
 			}
 			throw new MyAsyncNotFoundException(errorMap.toString());
 		}
-
 		// 인증
 		User principal = (User) session.getAttribute("principal");
 		if (principal == null) { // 로그인 안됨
 			throw new MyAsyncNotFoundException("인증이 되지 않았습니다.");
 		}
-
 		// 권한
 		if (principal.getId() != id) {
 			throw new MyAsyncNotFoundException("회원정보를 수정할 권한이 없습니다.");
 		}
 
-		// 핵심로직
-		principal.setEmail(dto.getEmail());
+		userService.회원수정(principal, dto);
 		session.setAttribute("principal", principal); // 세션 값 변경
-
-		userRepository.save(principal);
 
 		return new CMRespDto<>(1, "성공", null);
 	}
@@ -69,29 +60,23 @@ public class UserController {
 	public String userInfo(@PathVariable int id) {
 		// 기본은 userRepository.findById(id) 디비에서 가져와야 함.
 		// 편법은 세션값을 가져올 수도 있다.
-
 		return "user/updateForm";
 	}
-
 	@GetMapping("/logout")
 	public String logout() {
 		session.invalidate(); // 세션 무효화 (jsessionId에 있는 값을 비우는 것)
 		return "redirect:/"; // 게시글 목록 화면에 데이터가 있을까요?
 	}
-
 	@GetMapping("/loginForm")
 	public String loginForm() {
 		return "user/loginForm";
 	}
-
 	@GetMapping("/joinForm")
 	public String joinForm() {
 		return "user/joinForm";
 	}
-
 	@PostMapping("/login")
 	public @ResponseBody String login(@Valid LoginReqDto dto, BindingResult bindingResult) {
-
 		if (bindingResult.hasErrors()) {
 			Map<String, String> errorMap = new HashMap<>();
 			for (FieldError error : bindingResult.getFieldErrors()) {
@@ -100,7 +85,7 @@ public class UserController {
 			return Script.back(errorMap.toString());
 		}
 
-		User userEntity = userRepository.mLogin(dto.getUsername(), SHA.encrypt(dto.getPassword(), MyAlgorithm.SHA256));
+		User userEntity =  userService.로그인(dto);
 
 		if (userEntity == null) { // username, password 잘못 기입
 			return Script.back("아이디 혹은 비밀번호를 잘못 입력하였습니다.");
@@ -110,23 +95,18 @@ public class UserController {
 			return Script.href("/", "로그인 성공");
 		}
 	}
-
 	@PostMapping("/join")
 	public @ResponseBody String join(@Valid JoinReqDto dto, BindingResult bindingResult) { // username=love&password=1234&email=love@nate.com
-
 		if (bindingResult.hasErrors()) {
 			Map<String, String> errorMap = new HashMap<>();
 			for (FieldError error : bindingResult.getFieldErrors()) {
 				errorMap.put(error.getField(), error.getDefaultMessage());
 			}
-
 			return Script.back(errorMap.toString());
 		}
 
-		String encPassword = SHA.encrypt(dto.getPassword(), MyAlgorithm.SHA256);
+		userService.회원가입(dto);
 
-		dto.setPassword(encPassword);
-		userRepository.save(dto.toEntity());
 		return Script.href("/loginForm"); // 리다이렉션 (300)
 	}
 

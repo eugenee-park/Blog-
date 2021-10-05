@@ -18,5 +18,3 @@ public interface UserRepository extends JpaRepository<User, Integer>{
 	User mLogin(String username, String password);
 }
 
-
-

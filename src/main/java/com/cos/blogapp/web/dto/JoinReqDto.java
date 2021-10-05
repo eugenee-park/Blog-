@@ -33,6 +33,3 @@ public class JoinReqDto {
 		return user;
 	}
 }
-
-
-
