@@ -12,7 +12,6 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.ResponseBody;
-
 import com.cos.blogapp.domain.user.User;
 import com.cos.blogapp.handler.ex.MyAsyncNotFoundException;
 import com.cos.blogapp.service.UserService;
@@ -22,6 +21,7 @@ import com.cos.blogapp.web.dto.JoinReqDto;
 import com.cos.blogapp.web.dto.LoginReqDto;
 import com.cos.blogapp.web.dto.UserUpdateDto;
 import lombok.RequiredArgsConstructor;
+
 @RequiredArgsConstructor
 @Controller
 public class UserController {
@@ -51,6 +51,8 @@ public class UserController {
 		}
 
 		userService.회원수정(principal, dto);
+		// 세션 동기화 해주는 부분
+		principal.setEmail(dto.getEmail());
 		session.setAttribute("principal", principal); // 세션 값 변경
 
 		return new CMRespDto<>(1, "성공", null);
